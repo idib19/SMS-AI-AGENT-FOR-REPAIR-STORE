@@ -1,7 +1,8 @@
-// src/services/prompts/salesStagePrompt.ts
+// src/services/aiServices/replyToMessage.ts
 
-class SalesStagePrompt {
-    generatePrompt(conversationHistory, customerInfo, currentStage) {
+class ReplyToMessage {
+
+    generateResponse(conversationHistory: any[], customerInfo: any, currentStage: string) {
         return `You are a professional phone repair store SMS assistant. Analyze the context and respond based on the current sales stage.
 
 CURRENT CUSTOMER INFO:
@@ -9,7 +10,24 @@ Name: ${customerInfo.name || 'Unknown'}
 Phone: ${customerInfo.phoneModel || 'Unknown'}
 Issue: ${customerInfo.issue || 'Unknown'}
 
+
 CURRENT STAGE: ${currentStage}
+
+Based on this CURRENT_STAGE, generate a response that:
+1. Acknowledges their last message
+2. Provides relevant information for the stage
+3. Moves them toward the next stage
+4. Ends with a clear question
+5. Stays under 160 characters
+6. Uses proper punctuation
+
+BAD RESPONSES TO AVOID:
+✗ "Let me check..."
+✗ "We could probably..."
+✗ "Just letting you know..."
+✗ Any response without a clear question
+✗ Any response over 160 characters
+✗ Any response with ellipsis
 
 STAGE-SPECIFIC RESPONSE GUIDELINES:
 
@@ -63,21 +81,7 @@ CRITICAL RESPONSE RULES:
 CONVERSATION HISTORY:
 ${this._formatHistory(conversationHistory)}
 
-Based on this CURRENT_STAGE, generate a response that:
-1. Acknowledges their last message
-2. Provides relevant information for the stage
-3. Moves them toward the next stage
-4. Ends with a clear question
-5. Stays under 160 characters
-6. Uses proper punctuation
 
-BAD RESPONSES TO AVOID:
-✗ "Let me check..."
-✗ "We could probably..."
-✗ "Just letting you know..."
-✗ Any response without a clear question
-✗ Any response over 160 characters
-✗ Any response with ellipsis
 
 STAGE PROGRESSION GOALS:
 LEAD → QUALIFIED: Get device/issue confirmation
@@ -89,13 +93,14 @@ NURTURING → QUALIFIED: Reignite interest
 Current message to respond to: ${conversationHistory[conversationHistory.length - 1]?.content || 'Initial contact'}`;
     }
 
-    _formatHistory(conversationHistory) {
+    
+    _formatHistory(conversationHistory: any[]) {
         if (!conversationHistory || conversationHistory.length === 0) {
             return 'No previous messages';
         }
 
         return conversationHistory
-            .slice(-3) // Keep last 3 messages for context
+            .slice(-6) // Keep last 6 messages for context
             .map(msg => {
                 const role = msg.direction === 'inbound' ? 'Customer' : 'Store';
                 return `${role}: ${msg.content}`;
@@ -103,7 +108,9 @@ Current message to respond to: ${conversationHistory[conversationHistory.length 
             .join('\n');
     }
 
-    getStageSpecificInstructions(stage) {
+
+    // useful but not used currently needs to be part of generateResponse eventually !
+    getStageSpecificInstructions(stage: string) {
         const instructions = {
             LEAD: {
                 focus: "Confirm customer details",
@@ -152,8 +159,8 @@ Current message to respond to: ${conversationHistory[conversationHistory.length 
             }
         };
 
-        return instructions[stage] || instructions.LEAD;
+        return instructions[stage as keyof typeof instructions] || instructions.LEAD;
     }
 }
 
-module.exports = new SalesStagePrompt();
+module.exports = new ReplyToMessage();

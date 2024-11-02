@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const twilioService = require('../services/twilioService');
 const messageService = require('../services/messageService');
-const logger = require('../utils/logger');
-const aiService = require('../services/aiService');
+const replyToMessage = require('../services/aiServices/replyToMessage');
+const firstContact = require('../services/aiServices/firstContact');
 const { standardizePhoneNumber } = require('../utils/phoneUtils');
 
 
+
 // SMS webhook endpoint
-router.post('/webhook', async (req, res) => {
+router.post('/webhook', async (req: any, res: any) => {
     try {
         const { Body: messageContent, From: phoneNumber } = req.body;
         const standardizedPhone = standardizePhoneNumber(phoneNumber);
@@ -32,7 +33,7 @@ router.post('/webhook', async (req, res) => {
         const customerInfo = await messageService.getCustomerInfo(standardizedPhone);
 
         // Generate AI response
-        const aiResponse = await aiService.generateResponse(messageContent, conversationHistory, customerInfo);
+        const aiResponse = await replyToMessage.generateResponse(messageContent, conversationHistory, customerInfo);
 
         // Save AI response
         await messageService.saveMessage({
@@ -57,7 +58,7 @@ router.post('/webhook', async (req, res) => {
 });
 
 // Optional: Add an endpoint to retrieve conversation history
-router.get('/history/:phoneNumber', async (req, res) => {
+router.get('/history/:phoneNumber', async (req: any, res: any) => {
     try {
         const { phoneNumber } = req.params;
         const history = await messageService.getConversationHistory(phoneNumber);
@@ -69,7 +70,7 @@ router.get('/history/:phoneNumber', async (req, res) => {
 });
 
 // Fallback webhook endpoint
-router.post('/webhook/fallback', async (req, res) => {
+router.post('/webhook/fallback', async (req: any, res: any) => {
     try {
         logger.warn('⚠️ Fallback webhook triggered:', req.body);
         
@@ -87,7 +88,7 @@ router.post('/webhook/fallback', async (req, res) => {
 });
 
 // Status callback endpoint
-router.post('/status', async (req, res) => {
+router.post('/status', async (req: any, res: any) => {
     try {
         const { MessageStatus, MessageSid, From } = req.body;
         logger.info('📫 Message Status Update:', {
@@ -104,7 +105,7 @@ router.post('/status', async (req, res) => {
 });
 
 // First contact message endpoint
-router.post('/trigger-message', async (req, res) => {
+router.post('/trigger-message', async (req: any, res: any) => {
     try {
         const { phoneNumber, customerInfo } = req.body;
         const standardizedPhone = standardizePhoneNumber(phoneNumber);
@@ -114,7 +115,7 @@ router.post('/trigger-message', async (req, res) => {
         });
 
         // Generate AI message based on customer information
-        const outboundMessage = await aiService.generateFirstContactMessage(customerInfo);
+        const outboundMessage = await firstContact.generateFirstContactMessage(customerInfo);
 
         // Send message via Twilio
         const twilioResponse = await twilioService.sendMessage(
@@ -139,7 +140,7 @@ router.post('/trigger-message', async (req, res) => {
             to: standardizedPhone
         });
 
-    } catch (error) {
+    } catch (error: any) {
         logger.error('🔴 Error in trigger-outbound:', error);
         res.status(500).json({
             status: 'error',
