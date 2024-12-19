@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const twilioService = require('../services/twilioService');
+const SMSServiceFactory = require('../services/sms/SMSServiceFactory');
 const messageService = require('../services/messageService');
 const logger = require('../utils/logger');
 const AIService = require('../services/ai/AIService');
 const conversationAnalyzer = require('../services/ai/analyzers/conversationAnalyzer');
 const { standardizePhoneNumber } = require('../utils/phoneUtils');
+
+// Initialize SMS service logs or TwilioService for production vs development 
+const smsService = SMSServiceFactory.getService();
 
 // First contact message endpoint
 router.post('/trigger-message', async (req, res) => {
@@ -22,8 +25,8 @@ router.post('/trigger-message', async (req, res) => {
 
         logger.info('📤 Outbound message generated:', outboundMessage);
 
-        // Send message via Twilio
-        const twilioResponse = await twilioService.sendMessage(
+        // Send message via Twilio or log if not in production
+        const messageResponse = await smsService.sendMessage(
             standardizedPhone,
             outboundMessage
         );
@@ -40,7 +43,7 @@ router.post('/trigger-message', async (req, res) => {
 
         res.json({
             status: 'success',
-            messageSid: twilioResponse.sid,
+            messageSid: messageResponse.sid,
             content: outboundMessage,
             to: standardizedPhone
         });
@@ -98,15 +101,15 @@ router.post('/webhook', async (req, res) => {
             direction: 'outbound'
         });
 
-        // Send message via Twilio
-        const twilioResponse = await twilioService.sendMessage(
+        // Send message via Twilio or log if not in production
+        const messageResponse = await smsService.sendMessage(
             standardizedPhone,
             aiResponse.content
         );
 
         res.json({
             status: 'success',
-            messageSid: twilioResponse.sid,
+            messageSid: messageResponse.sid,
             content: aiResponse.content,
             to: standardizedPhone
         });
@@ -138,7 +141,7 @@ router.post('/webhook/fallback', async (req, res) => {
         logger.warn('⚠️ Fallback webhook triggered:', req.body);
         
         // Send a simple response to acknowledge the message
-        const fallbackResponse = twilioService.createTwiMLResponse(
+        const fallbackResponse = smsService.createTwiMLResponse(
             "We're experiencing technical difficulties. Please try again in a few minutes."
         );
         

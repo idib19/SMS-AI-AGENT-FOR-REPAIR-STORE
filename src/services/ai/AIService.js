@@ -3,6 +3,7 @@ const logger = require('../../utils/logger');
 const toolDefinitions = require('./tools/toolDefinitions');
 const toolHandler = require('./tools/toolHandler');
 const { buildFirstContactPrompt, buildResponsePrompt } = require('./prompts/messagePrompts');
+const SMSServiceFactory = require('../sms/SMSServiceFactory');
 
 class AIService {
     constructor() {
@@ -10,6 +11,7 @@ class AIService {
             apiKey: process.env.ANTHROPIC_API_KEY,
         });
         this.tools = toolDefinitions;
+        this.smsService = SMSServiceFactory.getService();
     }
 
     async generateFirstContactMessage(customerInfo) {

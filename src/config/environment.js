@@ -3,7 +3,7 @@
 require('dotenv').config();
 
 const environment = {
-    nodeEnv: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV || 'development',
     port: process.env.PORT || 3000,
     twilio: {
         accountSid: process.env.TWILIO_ACCOUNT_SID,
@@ -18,14 +18,18 @@ const environment = {
     }
 };
 
-// Validate required environment variables
+// Modify validation to not require Twilio credentials in development
 const validateEnv = () => {
-    const required = [
-        'TWILIO_ACCOUNT_SID',
-        'TWILIO_AUTH_TOKEN',
-        'TWILIO_PHONE_NUMBER',
-        'ANTHROPIC_API_KEY'
-    ];
+    const required = ['ANTHROPIC_API_KEY'];
+    
+    // Only require Twilio credentials in production
+    if (environment.environment === 'production') {
+        required.push(
+            'TWILIO_ACCOUNT_SID',
+            'TWILIO_AUTH_TOKEN',
+            'TWILIO_PHONE_NUMBER'
+        );
+    }
 
     for (const variable of required) {
         if (!process.env[variable]) {
